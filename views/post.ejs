@@ -1,0 +1,56 @@
+<%- include("partials/header"); -%>
+    <div class="max-width-1 m-auto">
+        <hr>
+    </div>
+
+    <div class="m-auto blog-post-content max-width-2 m-auto my-2">
+        <h1 class="font1">
+            <%= post.title %>
+        </h1>
+        <div class="blogpost-meta">
+            <div class="author-info">
+                <div>
+                    <b>
+                        Author: <%= post.author %>
+                    </b>
+                </div>
+                <% let datee=post.date.split(' ').splice(0,4).join(" ") %>
+                <div>
+                    <%= datee %>
+                </div>
+            </div>
+            <div class="image-container">
+
+                <img src="<%= post.image %>" class="center">
+
+                <% const str=post.content %>
+
+
+            </div>
+            <% start=0 %>
+                <% length=str.length %>
+                    <% end=4 %>
+                        <% while(end<=length) { %>
+                            <% let splitt=str.split(' .').splice(start,end).join(".") %>
+
+                    <p class=" font1">
+                        <%= splitt %> .
+                    </p>
+
+                    <% start=end+1 %>
+                        <% end=end+4 %>
+                            <% length=length-splitt.length %>
+                                <% } %>
+
+
+
+
+
+
+
+
+            </div>
+
+
+
+            <%- include('./partials/footer'); -%>

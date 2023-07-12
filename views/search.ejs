@@ -1,0 +1,31 @@
+<%- include("partials/header"); -%>
+
+
+
+    <div class="home-articles max-width-1 m-auto font2">
+        <h2>Search Results for Django (0.03 seconds)</h2>
+
+        <% postsArray.forEach(function(post){ %>
+
+
+            <div class="home-article">
+                <div class="home-article-img">
+                    <img src="img/1.png" alt="article">
+                </div>
+                <div class="home-article-content font1">
+                    <a href="/posts/<%=post._id%>">
+                        <h3>
+                            <%= post.title %>
+                        </h3>
+                    </a>
+
+                    <div>
+                        <%= post.author %>
+                    </div>
+                    <span>
+                        <%= post.date %>
+                    </span>
+                </div>
+            </div>
+            <% }) %>
+                <%- include("partials/footer"); -%>
