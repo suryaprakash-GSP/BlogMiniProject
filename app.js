@@ -1,75 +1,124 @@
 //jshint esversion:6
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const ejs = require("ejs");
-const _ = require('lodash');
+require('dotenv').config()
+const express = require('express');
+const findOrCreate = require("mongoose-findorcreate");
+const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const bodyParser = require('body-parser');
+const ejs = require('ejs');
 const mongoose = require('mongoose');
-const mongodb = require('mongodb');
+const session = require("express-session");
+const passport = require("passport");
+const passportLocalMongoose = require("passport-local-mongoose");
+const _ = require("lodash");
+const { Post } = require('./models.js');
 
-const aboutContent = "Hac habitasse platea dictumst vestibulum rhoncus est pellentesque. Dictumst vestibulum rhoncus est pellentesque elit ullamcorper. Non diam phasellus vestibulum lorem sed. Platea dictumst quisque sagittis purus sit. Egestas sed sed risus pretium quam vulputate dignissim suspendisse. Mauris in aliquam sem fringilla. Semper risus in hendrerit gravida rutrum quisque non tellus orci. Amet massa vitae tortor condimentum lacinia quis vel eros. Enim ut tellus elementum sagittis vitae. Mauris ultrices eros in cursus turpis massa tincidunt dui.";
-const contactContent = "Scelerisque eleifend donec pretium vulputate sapien. Rhoncus urna neque viverra justo nec ultrices. Arcu dui vivamus arcu felis bibendum. Consectetur adipiscing elit duis tristique. Risus viverra adipiscing at in tellus integer feugiat. Sapien nec sagittis aliquam malesuada bibendum arcu vitae. Consequat interdum varius sit amet mattis. Iaculis nunc sed augue lacus. Interdum posuere lorem ipsum dolor sit amet consectetur adipiscing elit. Pulvinar elementum integer enim neque. Ultrices gravida dictum fusce ut placerat orci nulla. Mauris in aliquam sem fringilla ut morbi tincidunt. Tortor posuere ac ut consequat semper viverra nam libero.";
 
 const app = express();
 
 app.set('view engine', 'ejs');
 
-// let posts = [];
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false,
+
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 
-mongoose.connect('mongodb://127.0.0.1:27017/blogDB');
-
-const postSchema = {
-  title: String,
-  content: String,
-  image: String,
-  author: String,
-  date: String,
-
-};
-
-const Post = mongoose.model("Post", postSchema);
-
-app.get("/", function (req, res) {
-
-  Post.find({}).then(function (postsArray) {
-
-    res.render("home", {
-
-      postsArray: postsArray,
-
-    });
-
-  })
-    .catch(function (err) {
-      console.log(err);
-    })
+mongoose.connect('mongodb://127.0.0.1:27017/userDB');
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+  googleId: String,
+  post: [],
 
 });
-app.get("/search", (req, res) => {
+
+userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 
 
-  Post.find({}).then(function (postsArray) {
+const User = new mongoose.model("User", userSchema);
 
 
 
-    res.render("search", {
+passport.use(User.createStrategy());
+passport.serializeUser(function (user, done) {
+  done(null, user);
+});
 
-      postsArray: postsArray,
-
+passport.deserializeUser(function (user, done) {
+  done(null, user);
+});
+passport.use(new GoogleStrategy({
+  clientID: process.env.CLIENT_ID,
+  clientSecret: process.env.CLINT_SECRET,
+  callbackURL: "http://localhost:3000/auth/google/secrets",
+  passReqToCallback: true,
+  userProfileURL: "https://www.googleapis.com/oauth2/v3/userInfo",
+},
+  function (request, accessToken, refreshToken, profile, done) {
+    console.log(profile);
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return done(err, user);
     });
+  }
+));
 
-  })
-    .catch(function (err) {
-      console.log(err);
-    })
-})
+
+app.get("/", (req, res) => {
+  res.render('home');
+});
+
+app.get("/auth/google",
+  passport.authenticate('google', {
+    scope:
+      ["profile"]
+  }
+  ));
+
+app.get("/auth/google/secrets",
+
+  passport.authenticate('google', {
+    successRedirect: "/allposts",
+    failureRedirect: "/login"
+  }));
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
+// app.get("/search", (req, res) => {
+
+
+//   Post.find({}).then(function (postsArray) {
+
+
+
+//     res.render("search", {
+
+//       postsArray: postsArray,
+
+//     });
+
+//   })
+//     .catch(function (err) {
+//       console.log(err);
+//     })
+// })
 
 app.get("/about", function (req, res) {
-  res.render("about", { aboutitem: aboutContent });
+  res.render("about");
 });
 
 app.get("/contact", function (req, res) {
@@ -78,16 +127,87 @@ app.get("/contact", function (req, res) {
 
 app.get("/composes", function (req, res) {
 
-  res.render("composes");
+  if (req.isAuthenticated()) {
+    res.render("composes");
+
+  }
+  else {
+    res.redirect("/login");
+  }
+});
+app.get("/allposts", (req, res) => {
+
+  User.find({}).then(function (foundUser) {
+    if (foundUser) {
+
+      res.render("allposts", { userswithSecrets: foundUser });
+    }
+
+
+  })
+    .catch(function (err) {
+      console.log(err);
+    })
+
+
+});
+
+app.post("/register", (req, res) => {
+
+
+  User.register({ username: req.body.username, active: false }, req.body.password, function (err, user) {
+    if (err) {
+      console.log(err);
+      res.redirect("/register");
+    }
+    else {
+      passport.authenticate("local")(req, res, () => {
+        res.redirect("/allposts");
+      })
+
+    }
+
+
+  });
+
+
+});
+
+app.post("/login", (req, res) => {
+
+  const user = new User({
+    username: req.body.username,
+    password: req.body.password,
+  });
+  req.login(user, function (err) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      passport.authenticate("local")(req, res, () => {
+        res.redirect("/allposts");
+      })
+    }
+  });
+
+});
+app.get("/logout", (req, res) => {
+  req.logout(function (err) {
+    if (err) { return next(err); }
+    res.redirect('/');
+  });
+
 });
 
 
-
-app.post("/compose", function (req, res) {
-
-
-
-
+app.post("/composes", function (req, res) {
+  const submittedpost = {
+    title: req.body.newItem,
+    author: req.body.author,
+    date: req.body.date,
+    content: req.body.post,
+    image: req.body.image,
+  };
   const post = new Post({
 
     title: req.body.newItem,
@@ -99,21 +219,41 @@ app.post("/compose", function (req, res) {
 
   });
   post.save();
+  const requestedId = req.user._id;
+  console.log(requestedId);
 
-  res.redirect("/");
-})
+  User.findOne({ _id: requestedId }).then(function (foundUser) {
+    if (foundUser) {
+      foundUser.post.push(submittedpost);
+      foundUser.save();
+      res.redirect("/allposts");
+    }
+
+
+  })
+    .catch(function (err) {
+      console.log(err);
+    })
 
 
 
 
-app.get("/posts/:postId", function (req, res) {
+
+
+
+});
 
 
 
 
-  const requestedPostId = req.params.postId;
+app.get("/posts/:posttitle", function (req, res) {
 
-  Post.findOne({ _id: requestedPostId }).then(function (item) {
+
+
+
+  const requestedPostId = req.params.posttitle;
+
+  Post.findOne({ title: requestedPostId }).then(function (item) {
 
 
     res.render("post", {

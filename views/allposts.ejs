@@ -1,0 +1,66 @@
+<%- include("partials/header"); -%>
+
+
+
+  <div class="max-width-1 m-auto">
+    <hr>
+  </div>
+  <div class="m-auto content max-width-1 my-2">
+    <div class="content-left">
+      <h1>Best blogging website for students</h1>
+      <p>iBlog is a website which lets you submit an article which upon approval will be up on our website and you
+        can get a good amount of reach from here!</p>
+      <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Laudantium voluptas magnam aut reiciendis
+        dignissimos. Eligendi accusamus tempore aliquid sed, nihil voluptates nesciunt adipisci temporibus accusantium
+        molestiae hic magni mollitia natus modi eveniet. Repellendus repudiandae natus facere consectetur aspernatur
+        pariatur possimus inventore laudantium tenetur, explicabo eaque laborum odio labore placeat itaque.</p>
+    </div>
+    <div class="content-right">
+      <img src="img/home.svg" alt="iBlog">
+    </div>
+  </div>
+
+  <div class="max-width-1 m-auto">
+    <hr>
+  </div>
+  <div class="home-articles max-width-1 m-auto font2">
+    <h2>Featured Articles</h2>
+    <% userswithSecrets.forEach(function(user){ %>
+
+      <% const userpost=user.post %>
+        <% userpost.forEach(function(post){ %>
+
+
+
+          <div class="home-article">
+            <div class="home-article-img">
+              <% var randomNumber1=Math.floor(Math.random() * 3) + 1; %>
+
+                <% var randomDiceImage=randomNumber1 + ".png" ; %>
+
+                  <% var randomImageSource="img/" + randomDiceImage %>
+
+
+                    <a href="/posts/<%=post.title%>"> <img src=<%=randomImageSource %> class=home-post-image</a>
+
+            </div>
+            <div class="home-article-content font1">
+              <a href="/posts/<%=post.title%>">
+                <h3>
+                  <%= post.title %>
+                </h3>
+              </a>
+
+              <div>
+                Author:
+                <%= post.author %>
+              </div>
+              <% let splitt=post.date.split(' ').splice(0,4).join(" ") %> 
+            <span>
+              <%= splitt %>.
+            </span>
+        </div>
+      </div>
+      <hr>
+      <% }) %>
+      <% })%>
