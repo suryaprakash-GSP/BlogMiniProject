@@ -1,0 +1,45 @@
+<%- include("partials/header"); -%>
+
+
+
+
+    <div class="home-articles max-width-1 m-auto font2">
+        <h2>MY Blogs</h2>
+
+        <% posts.forEach(function(post){ %>
+
+
+
+            <div class="home-article">
+                <div class="home-article-img">
+                    <% var randomNumber1=Math.floor(Math.random() * 3) + 1; %>
+
+                        <% var randomDiceImage=randomNumber1 + ".png" ; %>
+
+                            <% var randomImageSource="img/" + randomDiceImage %>
+
+
+                                <a href="/posts/<%=post.title%>"> <img src=<%=randomImageSource %>
+                                    class=home-post-image</a>
+
+                </div>
+                <div class="home-article-content font1">
+                    <a href="/posts/<%=post.title%>">
+                        <h3>
+                            <%= post.title %>
+                        </h3>
+                    </a>
+
+                    <div>
+                        Author:
+                        <%= post.author %>
+                    </div>
+                    <% let splitt=post.date.split(' ').splice(0,4).join(" ") %> 
+          <span>
+            <%= splitt %>.
+          </span>
+      </div>
+    </div>
+    <hr>
+    <% }) %>
+   

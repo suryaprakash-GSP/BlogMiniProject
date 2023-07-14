@@ -9,6 +9,7 @@ const postSchemaa = new mongoose.Schema({
     image: String,
     author: String,
     date: String,
+    postid: String,
 });
 
 

@@ -31,7 +31,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-mongoose.connect('mongodb://127.0.0.1:27017/userDB');
+mongoose.connect('mongodb://127.0.0.1:27017/blogDB');
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
@@ -76,6 +76,22 @@ passport.use(new GoogleStrategy({
 app.get("/", (req, res) => {
   res.render('home');
 });
+app.get("/nologout", (req, res) => {
+
+  User.find({}).then(function (foundUser) {
+    if (foundUser) {
+
+      res.render("nologout", { userswithSecrets: foundUser });
+    }
+
+
+  })
+    .catch(function (err) {
+      console.log(err);
+    })
+
+
+});
 
 app.get("/auth/google",
   passport.authenticate('google', {
@@ -98,24 +114,24 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
-// app.get("/search", (req, res) => {
+app.get("/search", (req, res) => {
 
 
-//   Post.find({}).then(function (postsArray) {
+  Post.find({}).then(function (postsArray) {
 
 
 
-//     res.render("search", {
+    res.render("search", {
 
-//       postsArray: postsArray,
+      postsArray: postsArray,
 
-//     });
+    });
 
-//   })
-//     .catch(function (err) {
-//       console.log(err);
-//     })
-// })
+  })
+    .catch(function (err) {
+      console.log(err);
+    })
+})
 
 app.get("/about", function (req, res) {
   res.render("about");
@@ -136,6 +152,24 @@ app.get("/composes", function (req, res) {
   }
 });
 app.get("/allposts", (req, res) => {
+  if (req.isAuthenticated()) {
+    User.find({}).then(function (foundUser) {
+      if (foundUser) {
+
+        res.render("allposts", { userswithSecrets: foundUser });
+      }
+
+
+    })
+      .catch(function (err) {
+        console.log(err);
+      })
+
+
+  }
+  else {
+    res.redirect("/nologout");
+  }
 
   User.find({}).then(function (foundUser) {
     if (foundUser) {
@@ -158,7 +192,8 @@ app.post("/register", (req, res) => {
   User.register({ username: req.body.username, active: false }, req.body.password, function (err, user) {
     if (err) {
       console.log(err);
-      res.redirect("/register");
+
+      res.redirect("/login");
     }
     else {
       passport.authenticate("local")(req, res, () => {
@@ -219,6 +254,8 @@ app.post("/composes", function (req, res) {
 
   });
   post.save();
+
+
   const requestedId = req.user._id;
   console.log(requestedId);
 
@@ -236,12 +273,37 @@ app.post("/composes", function (req, res) {
     })
 
 
-
-
-
-
-
 });
+
+app.get("/myBlogs", (req, res) => {
+
+
+  if (req.isAuthenticated()) {
+    const requestedId = req.user._id;
+    console.log(requestedId);
+
+    User.findOne({ _id: requestedId }).then(function (foundUser) {
+      if (foundUser) {
+
+        res.render("userBlogs", {
+          posts: foundUser.post,
+        });
+      }
+
+
+    })
+      .catch(function (err) {
+        console.log(err);
+      })
+
+
+  }
+  else {
+    res.redirect("/login");
+  }
+
+
+})
 
 
 
@@ -253,11 +315,15 @@ app.get("/posts/:posttitle", function (req, res) {
 
   const requestedPostId = req.params.posttitle;
 
+
   Post.findOne({ title: requestedPostId }).then(function (item) {
 
 
+
+
     res.render("post", {
-      post: item
+      post: item,
+
     });
 
   })
